@@ -41,6 +41,9 @@ alias du='du -h'
 
 # Modern replacements (if installed)
 if command -v eza &> /dev/null; then
+    # Rosé Pine colors: di=directory, fi=file, ln=symlink, ex=executable
+    export EZA_COLORS="di=38;5;174:ln=38;5;139:ex=38;5;150"
+
     alias ls='eza --group-directories-first'
     alias ll='eza -la --group-directories-first --git'
     alias lt='eza -la --tree --level=2'
