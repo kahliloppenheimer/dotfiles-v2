@@ -41,9 +41,6 @@ alias du='du -h'
 
 # Modern replacements (if installed)
 if command -v eza &> /dev/null; then
-    # Rosé Pine colors: di=directory, fi=file, ln=symlink, ex=executable
-    export EZA_COLORS="di=38;5;174:ln=38;5;139:ex=38;5;150"
-
     alias ls='eza --group-directories-first'
     alias ll='eza -la --group-directories-first --git'
     alias lt='eza -la --tree --level=2'
@@ -53,6 +50,55 @@ if command -v bat &> /dev/null; then
     alias cat='bat --paging=never --style=plain'
     export BAT_THEME="rose-pine"
 fi
+
+
+# ── Custom Functions  ──────────────────────────────────────────────────
+# -- p: Run command and copy formatted output --
+# Usage: p ls -la
+# Copies "$ ls -la\n<output>" to clipboard (works over SSH via OSC 52)
+p() {
+    # Expand aliases by running through zsh -i
+    local output
+    output=$(zsh -ic "$*" 2>&1)
+    local exit_code=$?
+    
+    local formatted="$ $*
+$output"
+    
+    _copy_to_clipboard() {
+        local text="$1"
+        
+        # OSC 52: works over SSH if terminal supports it (iTerm, kitty, etc.)
+        if [[ -n "$SSH_TTY" ]] || [[ -n "$SSH_CONNECTION" ]]; then
+            local encoded=$(printf '%s' "$text" | base64 | tr -d '\n')
+            printf '\033]52;c;%s\a' "$encoded"
+            return 0
+        fi
+        
+        # Local clipboard tools
+        if command -v pbcopy &> /dev/null; then
+            printf '%s' "$text" | pbcopy
+        elif command -v xclip &> /dev/null; then
+            printf '%s' "$text" | xclip -selection clipboard
+        elif command -v xsel &> /dev/null; then
+            printf '%s' "$text" | xsel --clipboard --input
+        elif [[ -n "$WAYLAND_DISPLAY" ]] && command -v wl-copy &> /dev/null; then
+            printf '%s' "$text" | wl-copy
+        else
+            return 1
+        fi
+    }
+    
+    if _copy_to_clipboard "$formatted"; then
+        echo "$output"
+        echo "\n[copied to clipboard]" >&2
+    else
+        echo "$output"
+        echo "\n[clipboard not available]" >&2
+    fi
+    
+    return $exit_code
+}
 
 # ── Local Overrides ──────────────────────────────────────────
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
