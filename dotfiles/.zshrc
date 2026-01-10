@@ -56,9 +56,7 @@ fi
 # -- p: Run command and copy formatted output --
 # Usage: p ls -la
 # Copies "$ ls -la\n<output>" to clipboard (works over SSH via OSC 52)
-# -- p: Run command and copy formatted output --
-# Usage: p ls -la
-# Copies "$ ls -la\n<output>" to clipboard (works over SSH via OSC 52)
+
 p() {
     local output cmd_string="$*"
     
