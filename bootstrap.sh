@@ -1,261 +1,170 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────
-# Dotfiles Bootstrap Script
-# Run on a new machine to set everything up
+# Dotfiles Bootstrap
 # 
-# Usage: curl -fsSL https://raw.githubusercontent.com/YOUR_USER/dotfiles/main/bootstrap.sh | bash
-#    or: ./bootstrap.sh
+# curl -fsSL https://raw.githubusercontent.com/YOURUSER/dotfiles/main/bootstrap.sh | bash
 # ─────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
-# Configuration - CHANGE THESE
-DOTFILES_REPO="${DOTFILES_REPO:-git@github.com:kahliloppenheimer/dotfiles-v2.git}"
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
+REPO="${DOTFILES_REPO:-https://github.com/YOURUSER/dotfiles.git}"
+DOTFILES_DIR="$HOME/.dotfiles"
 
 # Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-success() { echo -e "${GREEN}[OK]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+info() { echo -e "\033[0;34m::\033[0m $1"; }
+success() { echo -e "\033[0;32m✓\033[0m $1"; }
+warn() { echo -e "\033[1;33m!\033[0m $1"; }
+error() { echo -e "\033[0;31m✗\033[0m $1"; exit 1; }
 
 # ── Detect OS ────────────────────────────────────────────────
 detect_os() {
-    if [ -f /etc/os-release ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macos"
+    elif [ -f /etc/os-release ]; then
         . /etc/os-release
         echo "$ID"
-    elif [ "$(uname)" = "Darwin" ]; then
-        echo "macos"
     else
         echo "unknown"
     fi
 }
 
 OS=$(detect_os)
-info "Detected OS: $OS"
+info "Detected: $OS"
 
-# ── Install Dependencies ─────────────────────────────────────
-install_deps() {
-    info "Installing dependencies..."
+# ── Install packages ─────────────────────────────────────────
+install_packages() {
+    info "Installing packages..."
     
     case "$OS" in
-        ubuntu|debian)
-            sudo apt update
-            sudo apt install -y git stow zsh curl wget unzip
-            ;;
-        fedora)
-            sudo dnf install -y git stow zsh curl wget unzip
-            ;;
-        arch)
-            sudo pacman -Sy --noconfirm git stow zsh curl wget unzip
-            ;;
-        alpine)
-            sudo apk add git stow zsh curl wget
-            ;;
         macos)
             if ! command -v brew &> /dev/null; then
+                info "Installing Homebrew..."
                 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             fi
-            brew install git stow zsh curl wget
+            brew install zsh eza bat git
+            brew install --cask font-jetbrains-mono-nerd-font 2>/dev/null || true
             ;;
-        *)
-            warn "Unknown OS, assuming dependencies are installed"
-            ;;
-    esac
-    
-    success "Dependencies installed"
-}
-
-# ── Install Modern CLI Tools ─────────────────────────────────
-install_tools() {
-    info "Installing modern CLI tools..."
-    
-    case "$OS" in
         ubuntu|debian)
-            # eza (modern ls)
-            sudo mkdir -p /etc/apt/keyrings
-            wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-            echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
             sudo apt update
-            sudo apt install -y eza bat ripgrep fd-find fzf
-            
-            # bat is installed as batcat on Debian/Ubuntu
-            [ ! -f /usr/local/bin/bat ] && sudo ln -sf /usr/bin/batcat /usr/local/bin/bat || true
-            [ ! -f /usr/local/bin/fd ] && sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd || true
+            sudo apt install -y zsh git curl
+            # eza
+            if ! command -v eza &> /dev/null; then
+                sudo mkdir -p /etc/apt/keyrings
+                wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg 2>/dev/null || true
+                echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
+                sudo apt update && sudo apt install -y eza 2>/dev/null || warn "Could not install eza"
+            fi
+            sudo apt install -y bat 2>/dev/null || sudo apt install -y batcat 2>/dev/null || true
+            [ -f /usr/bin/batcat ] && sudo ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
+            sudo apt install -y xclip 2>/dev/null || true
             ;;
         fedora)
-            sudo dnf install -y eza bat ripgrep fd-find fzf
+            sudo dnf install -y zsh git eza bat xclip
             ;;
         arch)
-            sudo pacman -S --noconfirm eza bat ripgrep fd fzf
+            sudo pacman -Sy --noconfirm zsh git eza bat xclip
             ;;
-        macos)
-            brew install eza bat ripgrep fd fzf
+        alpine)
+            sudo apk add zsh git bat
+            ;;
+        *)
+            warn "Unknown OS, skipping package install"
             ;;
     esac
     
-    # Install starship (cross-platform)
-    if ! command -v starship &> /dev/null; then
-        info "Installing Starship prompt..."
-        curl -sS https://starship.rs/install.sh | sh -s -- -y
-    fi
-    
-    # Install zoxide (cross-platform)
-    if ! command -v zoxide &> /dev/null; then
-        info "Installing zoxide..."
-        curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
-    fi
-    
-    success "Tools installed"
+    success "Packages installed"
 }
 
-# ── Clone Dotfiles ───────────────────────────────────────────
+# ── Install oh-my-zsh ────────────────────────────────────────
+install_ohmyzsh() {
+    if [ ! -d "$HOME/.oh-my-zsh" ]; then
+        info "Installing oh-my-zsh..."
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        success "oh-my-zsh installed"
+    else
+        success "oh-my-zsh already installed"
+    fi
+}
+
+# ── Clone or update dotfiles ─────────────────────────────────
 clone_dotfiles() {
     if [ -d "$DOTFILES_DIR" ]; then
-        warn "Dotfiles directory already exists at $DOTFILES_DIR"
-        read -p "Pull latest changes? [y/N] " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            cd "$DOTFILES_DIR"
-            git pull
-        fi
+        info "Updating existing dotfiles..."
+        git -C "$DOTFILES_DIR" pull --ff-only || warn "Could not pull, using existing"
     else
         info "Cloning dotfiles..."
-        git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+        git clone "$REPO" "$DOTFILES_DIR"
     fi
-    success "Dotfiles ready at $DOTFILES_DIR"
+    success "Dotfiles ready"
 }
 
-# ── Stow Packages ────────────────────────────────────────────
-stow_packages() {
-    info "Stowing packages..."
-    cd "$DOTFILES_DIR"
+# ── Link configs ─────────────────────────────────────────────
+link_configs() {
+    info "Linking configs..."
     
-    # Backup existing files
-    backup_dir="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
+    # zshrc
+    if [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ]; then
+        mv "$HOME/.zshrc" "$HOME/.zshrc.old"
+        success "Backed up ~/.zshrc → ~/.zshrc.old"
+    fi
+    rm -f "$HOME/.zshrc"
+    ln -sf "$DOTFILES_DIR/dotfiles/.zshrc" "$HOME/.zshrc"
+    success "Linked ~/.zshrc"
     
-    for pkg in */; do
-        pkg="${pkg%/}"
-        
-        # Skip non-stowable directories
-        [[ "$pkg" == "scripts" ]] && continue
-        [ -f "$pkg/.nostow" ] && continue
-        
-        info "Stowing $pkg..."
-        
-        # Try to stow, backup conflicts
-        if ! stow -n "$pkg" 2>&1 | grep -q "existing target"; then
-            stow "$pkg"
+    # tmux.conf
+    if [ -f "$HOME/.tmux.conf" ] && [ ! -L "$HOME/.tmux.conf" ]; then
+        mv "$HOME/.tmux.conf" "$HOME/.tmux.conf.old"
+        success "Backed up ~/.tmux.conf → ~/.tmux.conf.old"
+    fi
+    rm -f "$HOME/.tmux.conf"
+    ln -sf "$DOTFILES_DIR/dotfiles/.tmux.conf" "$HOME/.tmux.conf"
+    success "Linked ~/.tmux.conf"
+    
+    # Create local override files
+    [ -f "$HOME/.zshrc.local" ] || touch "$HOME/.zshrc.local"
+    [ -f "$HOME/.tmux.conf.local" ] || touch "$HOME/.tmux.conf.local"
+}
+
+# ── Set shell ────────────────────────────────────────────────
+set_shell() {
+    local zsh_path
+    zsh_path=$(which zsh)
+    
+    if [ "$SHELL" != "$zsh_path" ]; then
+        info "Setting zsh as default shell..."
+        if grep -q "$zsh_path" /etc/shells 2>/dev/null; then
+            chsh -s "$zsh_path" || warn "Could not change shell, run: chsh -s $zsh_path"
         else
-            warn "Conflicts found for $pkg, backing up..."
-            mkdir -p "$backup_dir"
-            stow --adopt "$pkg"
-            git -C "$DOTFILES_DIR" checkout -- "$pkg"
-            stow "$pkg"
+            warn "Add zsh to /etc/shells: echo $zsh_path | sudo tee -a /etc/shells"
         fi
-    done
-    
-    success "All packages stowed"
-}
-
-# ── Setup Shell ──────────────────────────────────────────────
-setup_shell() {
-    info "Setting up shell..."
-    
-    # Change default shell to zsh
-    if [ "$SHELL" != "$(which zsh)" ]; then
-        info "Changing default shell to zsh..."
-        chsh -s "$(which zsh)"
-    fi
-    
-    # Install TPM for tmux
-    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-        info "Installing TPM (Tmux Plugin Manager)..."
-        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-    fi
-    
-    success "Shell setup complete"
-}
-
-# ── Setup Systemd Timer ──────────────────────────────────────
-setup_sync_timer() {
-    # Only on Linux with systemd
-    if [ "$OS" != "macos" ] && command -v systemctl &> /dev/null; then
-        info "Setting up auto-sync timer..."
-        
-        # Make sync script executable
-        chmod +x "$DOTFILES_DIR/scripts/dotfiles-sync.sh"
-        
-        # Enable and start timer
-        systemctl --user daemon-reload
-        systemctl --user enable dotfiles-sync.timer
-        systemctl --user start dotfiles-sync.timer
-        
-        success "Auto-sync timer enabled (runs every 30 minutes)"
     else
-        warn "Skipping systemd timer (not available on this system)"
-        info "Consider setting up a cron job instead:"
-        echo "  */30 * * * * $DOTFILES_DIR/scripts/dotfiles-sync.sh"
+        success "zsh is already default"
     fi
-}
-
-# ── Install Nerd Font ────────────────────────────────────────
-install_font() {
-    info "Installing JetBrains Mono Nerd Font..."
-    
-    FONT_DIR="$HOME/.local/share/fonts"
-    mkdir -p "$FONT_DIR"
-    
-    if [ ! -f "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" ]; then
-        cd /tmp
-        wget -q https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
-        unzip -o JetBrainsMono.zip -d "$FONT_DIR"
-        rm JetBrainsMono.zip
-        
-        # Refresh font cache
-        if command -v fc-cache &> /dev/null; then
-            fc-cache -fv
-        fi
-        
-        success "Font installed"
-    else
-        success "Font already installed"
-    fi
-    
-    info "Remember to set your terminal font to 'JetBrainsMono Nerd Font'"
 }
 
 # ── Main ─────────────────────────────────────────────────────
 main() {
     echo ""
-    echo "╔═══════════════════════════════════════╗"
-    echo "║       Dotfiles Bootstrap Script       ║"
-    echo "╚═══════════════════════════════════════╝"
+    echo "┌─────────────────────────────────┐"
+    echo "│     Dotfiles Bootstrap          │"
+    echo "└─────────────────────────────────┘"
     echo ""
     
-    install_deps
-    install_tools
+    install_packages
+    install_ohmyzsh
     clone_dotfiles
-    stow_packages
-    setup_shell
-    setup_sync_timer
-    install_font
+    link_configs
+    set_shell
     
     echo ""
-    echo "╔═══════════════════════════════════════╗"
-    echo "║           Setup Complete! 🎉          ║"
-    echo "╚═══════════════════════════════════════╝"
+    echo "┌─────────────────────────────────┐"
+    echo "│         Done! 🌸                │"
+    echo "└─────────────────────────────────┘"
     echo ""
-    echo "Next steps:"
-    echo "  1. Log out and back in (or run: exec zsh)"
-    echo "  2. In tmux, press Ctrl-a + I to install plugins"
-    echo "  3. Set your terminal font to 'JetBrainsMono Nerd Font'"
+    echo "Restart your terminal or run: exec zsh"
+    echo ""
+    echo "Optional: Set font to 'JetBrains Mono Nerd Font'"
+    echo "Optional: Import Rosé Pine theme → https://github.com/rose-pine"
     echo ""
 }
 
