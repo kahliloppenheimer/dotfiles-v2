@@ -2,12 +2,12 @@
 # ─────────────────────────────────────────────────────────────
 # Dotfiles Bootstrap
 # 
-# curl -fsSL https://raw.githubusercontent.com/YOURUSER/dotfiles/main/bootstrap.sh | bash
+# curl -fsSL https://raw.githubusercontent.com/kahliloppenheimer/dotfiles-v2/refs/heads/main/bootstrap.sh | bash
 # ─────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
-REPO="${DOTFILES_REPO:-https://github.com/YOURUSER/dotfiles.git}"
+REPO="${DOTFILES_REPO:-https://github.com/kahliloppenheimer/dotfiles-v2.git}"
 DOTFILES_DIR="$HOME/.dotfiles"
 
 # Colors
