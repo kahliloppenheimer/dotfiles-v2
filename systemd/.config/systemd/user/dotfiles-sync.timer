@@ -1,0 +1,19 @@
+[Unit]
+Description=Dotfiles sync timer
+Requires=dotfiles-sync.service
+
+[Timer]
+# Run 5 minutes after boot
+OnBootSec=5min
+
+# Then every 30 minutes
+OnUnitActiveSec=30min
+
+# Add some randomness to prevent all machines syncing at once
+RandomizedDelaySec=5min
+
+# Persist timer across reboots
+Persistent=true
+
+[Install]
+WantedBy=timers.target
