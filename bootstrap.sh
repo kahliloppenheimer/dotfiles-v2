@@ -130,15 +130,42 @@ set_shell() {
     local zsh_path
     zsh_path=$(which zsh)
     
+    info "Setting up zsh as default shell..."
+    
+    # Add zsh to /etc/shells if not present
+    if ! grep -q "$zsh_path" /etc/shells 2>/dev/null; then
+        info "Adding zsh to /etc/shells..."
+        echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
+        success "Added $zsh_path to /etc/shells"
+    fi
+    
+    # Try to change shell
     if [ "$SHELL" != "$zsh_path" ]; then
-        info "Setting zsh as default shell..."
-        if grep -q "$zsh_path" /etc/shells 2>/dev/null; then
-            chsh -s "$zsh_path" || warn "Could not change shell, run: chsh -s $zsh_path"
+        if chsh -s "$zsh_path" 2>/dev/null; then
+            success "Default shell changed to zsh"
         else
-            warn "Add zsh to /etc/shells: echo $zsh_path | sudo tee -a /etc/shells"
+            warn "chsh failed, adding bashrc fallback"
         fi
     else
-        success "zsh is already default"
+        success "zsh is already default shell"
+    fi
+    
+    # Add bashrc fallback so zsh loads even if chsh didn't work
+    # (handles cases where SHELL env doesn't update until re-login)
+    local bashrc="$HOME/.bashrc"
+    local fallback_marker="# dotfiles: auto-switch to zsh"
+    
+    if [ -f "$bashrc" ] && ! grep -q "$fallback_marker" "$bashrc" 2>/dev/null; then
+        info "Adding zsh fallback to .bashrc..."
+        cat >> "$bashrc" << 'EOF'
+
+# dotfiles: auto-switch to zsh
+if [ -x "$(command -v zsh)" ] && [ -z "$ZSH_EXECUTION_SHELL" ]; then
+    export ZSH_EXECUTION_SHELL=1
+    exec zsh -l
+fi
+EOF
+        success "Added zsh fallback to .bashrc"
     fi
 }
 
