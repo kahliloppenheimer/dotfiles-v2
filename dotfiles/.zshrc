@@ -58,15 +58,28 @@ fi
 # Copies "$ ls -la\n<output>" to clipboard (works over SSH via OSC 52)
 
 p() {
-    local output cmd_string="$*"
+    local output
     
-    # Capture output, allowing alias expansion via eval
-    output=$(eval "$cmd_string" 2>&1)
+    # Check if receiving piped input
+    if [[ ! -t 0 ]]; then
+        output=$(cat)
+    else
+        local cmd_string="$*"
+        output=$(eval "$cmd_string" 2>&1)
+    fi
+    
     local exit_code=$?
     
-    local formatted="$ $cmd_string
+    # Format: include command prefix only if we ran a command
+    local formatted
+    if [[ -t 0 ]] && [[ -n "$cmd_string" ]]; then
+        formatted="$ $cmd_string
 $output"
+    else
+        formatted="$output"
+    fi
     
+    # Copy to clipboard
     _copy_to_clipboard() {
         local text="$1"
         
@@ -101,6 +114,7 @@ $output"
     
     return $exit_code
 }
+
 
 # ── Local Overrides ──────────────────────────────────────────
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
