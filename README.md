@@ -5,13 +5,13 @@ Minimal zsh + tmux setup with Rosé Pine theme.
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOURUSER/dotfiles/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kahliloppenheimer/dotfiles/main/bootstrap.sh | bash
 ```
 
 Or manually:
 
 ```bash
-git clone https://github.com/YOURUSER/dotfiles.git ~/.dotfiles
+git clone https://github.com/kahliloppenheimer/dotfiles.git ~/.dotfiles
 ~/.dotfiles/bootstrap.sh
 ```
 
