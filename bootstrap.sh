@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # Configuration - CHANGE THESE
-DOTFILES_REPO="${DOTFILES_REPO:-git@github.com:YOUR_USERNAME/dotfiles.git}"
+DOTFILES_REPO="${DOTFILES_REPO:-git@github.com:kahliloppenheimer/dotfiles-v2.git}"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
 
 # Colors
