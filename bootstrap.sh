@@ -119,7 +119,16 @@ link_configs() {
     rm -f "$HOME/.tmux.conf"
     ln -sf "$DOTFILES_DIR/dotfiles/.tmux.conf" "$HOME/.tmux.conf"
     success "Linked ~/.tmux.conf"
-    
+
+    # vimrc
+    if [ -f "$HOME/.vimrc" ] && [ ! -L "$HOME/.vimrc" ]; then
+        mv "$HOME/.vimrc" "$HOME/.vimrc.old"
+        success "Backed up ~/.vimrc → ~/.vimrc.old"
+    fi
+    rm -f "$HOME/.vimrc"
+    ln -sf "$DOTFILES_DIR/dotfiles/.vimrc" "$HOME/.vimrc"
+    success "Linked ~/.vimrc"
+
     # Create local override files
     [ -f "$HOME/.zshrc.local" ] || touch "$HOME/.zshrc.local"
     [ -f "$HOME/.tmux.conf.local" ] || touch "$HOME/.tmux.conf.local"
