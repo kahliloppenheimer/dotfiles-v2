@@ -69,16 +69,15 @@ install_packages() {
             fi
             sudo apt install -y bat 2>/dev/null || sudo apt install -y batcat 2>/dev/null || true
             [ -f /usr/bin/batcat ] && sudo ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
-            sudo apt install -y xclip 2>/dev/null || true
             ;;
         fedora)
-            sudo dnf install -y zsh git eza bat xclip
+            sudo dnf install -y zsh git eza bat
             ;;
         arch)
-            sudo pacman -Sy --noconfirm zsh git eza bat xclip
+            sudo pacman -Sy --noconfirm zsh git eza bat
             ;;
         alpine)
-            sudo apk add zsh git bat xclip
+            sudo apk add zsh git bat
             ;;
         *)
             warn "Unknown OS, skipping package install"
@@ -169,27 +168,36 @@ set_shell() {
     fi
 }
 
-# ── Setup clipboard aliases (Linux) ──────────────────────────
+# ── Setup clipboard tool (Linux) ─────────────────────────────
 setup_clipboard() {
     if [[ "$OS" == "macos" ]]; then
         success "pbcopy/pbpaste already available on macOS"
         return 0
     fi
 
-    if ! command -v xclip &> /dev/null; then
-        warn "xclip not installed, skipping clipboard aliases"
-        return 0
+    # Install rcp if not present
+    if ! command -v rcp &> /dev/null; then
+        info "Installing rcp for clipboard functionality..."
+        local tmp_rcp="/tmp/rcp-linux-amd64"
+        if curl -fsSL -o "$tmp_rcp" https://github.com/re-verse/rcp/releases/latest/download/rcp-linux-amd64; then
+            chmod +x "$tmp_rcp"
+            sudo mv "$tmp_rcp" /usr/local/bin/rcp
+            success "rcp installed"
+        else
+            warn "Could not install rcp, skipping clipboard aliases"
+            return 0
+        fi
+    else
+        success "rcp already installed"
     fi
-
-    info "Setting up pbcopy/pbpaste aliases..."
 
     # Add aliases to .zshrc.local if not already present
     if ! grep -q "alias pbcopy" "$HOME/.zshrc.local" 2>/dev/null; then
         cat >> "$HOME/.zshrc.local" << 'EOF'
 
 # Clipboard aliases (Linux compatibility with macOS pbcopy/pbpaste)
-alias pbcopy='xclip -selection clipboard'
-alias pbpaste='xclip -selection clipboard -o'
+alias pbcopy='rcp'
+alias pbpaste='rcp --paste'
 EOF
         success "Added pbcopy/pbpaste aliases to ~/.zshrc.local"
     else
