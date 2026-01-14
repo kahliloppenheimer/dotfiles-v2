@@ -119,5 +119,10 @@ $output"
 }
 
 
+# ── Dotfiles Auto-Update ────────────────────────────────────
+# Set DOTFILES_UPDATE_INTERVAL=0 in ~/.zshrc.local to disable
+# Or set to seconds between checks (default: 3600 = 1 hour)
+[[ -f ~/.dotfiles/dotfiles/auto-update.sh ]] && source ~/.dotfiles/dotfiles/auto-update.sh
+
 # ── Local Overrides ──────────────────────────────────────────
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

@@ -10,10 +10,13 @@ set -euo pipefail
 REPO="${DOTFILES_REPO:-https://github.com/kahliloppenheimer/dotfiles-v2.git}"
 DOTFILES_DIR="$HOME/.dotfiles"
 
+# Quiet mode (for auto-update)
+QUIET="${DOTFILES_QUIET:-0}"
+
 # Colors
-info() { echo -e "\033[0;34m::\033[0m $1"; }
-success() { echo -e "\033[0;32m✓\033[0m $1"; }
-warn() { echo -e "\033[1;33m!\033[0m $1"; }
+info() { [[ "$QUIET" == "1" ]] || echo -e "\033[0;34m::\033[0m $1"; }
+success() { [[ "$QUIET" == "1" ]] || echo -e "\033[0;32m✓\033[0m $1"; }
+warn() { [[ "$QUIET" == "1" ]] || echo -e "\033[1;33m!\033[0m $1"; }
 error() { echo -e "\033[0;31m✗\033[0m $1"; exit 1; }
 
 # ── Detect OS ────────────────────────────────────────────────
@@ -75,7 +78,7 @@ install_packages() {
             sudo pacman -Sy --noconfirm zsh git eza bat xclip
             ;;
         alpine)
-            sudo apk add zsh git bat
+            sudo apk add zsh git bat xclip
             ;;
         *)
             warn "Unknown OS, skipping package install"
@@ -166,31 +169,64 @@ set_shell() {
     fi
 }
 
+# ── Setup clipboard aliases (Linux) ──────────────────────────
+setup_clipboard() {
+    if [[ "$OS" == "macos" ]]; then
+        success "pbcopy/pbpaste already available on macOS"
+        return 0
+    fi
+
+    if ! command -v xclip &> /dev/null; then
+        warn "xclip not installed, skipping clipboard aliases"
+        return 0
+    fi
+
+    info "Setting up pbcopy/pbpaste aliases..."
+
+    # Add aliases to .zshrc.local if not already present
+    if ! grep -q "alias pbcopy" "$HOME/.zshrc.local" 2>/dev/null; then
+        cat >> "$HOME/.zshrc.local" << 'EOF'
+
+# Clipboard aliases (Linux compatibility with macOS pbcopy/pbpaste)
+alias pbcopy='xclip -selection clipboard'
+alias pbpaste='xclip -selection clipboard -o'
+EOF
+        success "Added pbcopy/pbpaste aliases to ~/.zshrc.local"
+    else
+        success "pbcopy/pbpaste aliases already configured"
+    fi
+}
+
 # ── Main ─────────────────────────────────────────────────────
 main() {
-    echo ""
-    echo "┌─────────────────────────────────┐"
-    echo "│     Dotfiles Bootstrap          │"
-    echo "└─────────────────────────────────┘"
-    echo ""
-    
+    if [[ "$QUIET" != "1" ]]; then
+        echo ""
+        echo "┌─────────────────────────────────┐"
+        echo "│     Dotfiles Bootstrap          │"
+        echo "└─────────────────────────────────┘"
+        echo ""
+    fi
+
     install_packages
     install_ohmyzsh
     clone_dotfiles
     link_configs
     set_shell
-    
-    echo ""
-    echo "┌─────────────────────────────────┐"
-    echo "│         Done! 🌸                │"
-    echo "└─────────────────────────────────┘"
-    echo ""
-    echo "Run this to start using zsh now:"
-    echo "  export SHELL=\$(which zsh) && exec zsh"
-    echo ""
-    echo "Optional: Set font to 'JetBrains Mono Nerd Font'"
-    echo "Optional: Import Rosé Pine theme → https://github.com/rose-pine"
-    echo ""
+    setup_clipboard
+
+    if [[ "$QUIET" != "1" ]]; then
+        echo ""
+        echo "┌─────────────────────────────────┐"
+        echo "│         Done! 🌸                │"
+        echo "└─────────────────────────────────┘"
+        echo ""
+        echo "Run this to start using zsh now:"
+        echo "  export SHELL=\$(which zsh) && exec zsh"
+        echo ""
+        echo "Optional: Set font to 'JetBrains Mono Nerd Font'"
+        echo "Optional: Import Rosé Pine theme → https://github.com/rose-pine"
+        echo ""
+    fi
 }
 
 main "$@"
