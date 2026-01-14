@@ -191,8 +191,13 @@ setup_clipboard() {
         success "rcp already installed"
     fi
 
-    # Add aliases to .zshrc.local if not already present
-    if ! grep -q "alias pbcopy" "$HOME/.zshrc.local" 2>/dev/null; then
+    # Add or update aliases in .zshrc.local
+    if ! grep -q "alias pbcopy='rcp'" "$HOME/.zshrc.local" 2>/dev/null; then
+        # Remove old pbcopy/pbpaste aliases if they exist
+        if grep -q "alias pbcopy" "$HOME/.zshrc.local" 2>/dev/null; then
+            sed -i.bak '/# Clipboard aliases/d; /alias pbcopy/d; /alias pbpaste/d' "$HOME/.zshrc.local"
+        fi
+
         cat >> "$HOME/.zshrc.local" << 'EOF'
 
 # Clipboard aliases (Linux compatibility with macOS pbcopy/pbpaste)
