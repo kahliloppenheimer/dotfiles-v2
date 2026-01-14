@@ -31,10 +31,20 @@ detect_os() {
 OS=$(detect_os)
 info "Detected: $OS"
 
+# ── Check if packages are installed ──────────────────────────
+packages_installed() {
+    command -v zsh &> /dev/null && command -v git &> /dev/null
+}
+
 # ── Install packages ─────────────────────────────────────────
 install_packages() {
+    if packages_installed; then
+        success "Required packages already installed"
+        return 0
+    fi
+
     info "Installing packages..."
-    
+
     case "$OS" in
         macos)
             if ! command -v brew &> /dev/null; then
@@ -71,7 +81,7 @@ install_packages() {
             warn "Unknown OS, skipping package install"
             ;;
     esac
-    
+
     success "Packages installed"
 }
 
@@ -138,43 +148,21 @@ link_configs() {
 set_shell() {
     local zsh_path
     zsh_path=$(which zsh)
-    
-    info "Setting up zsh as default shell..."
-    
+
     # Add zsh to /etc/shells if not present
     if ! grep -q "$zsh_path" /etc/shells 2>/dev/null; then
         info "Adding zsh to /etc/shells..."
         echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
         success "Added $zsh_path to /etc/shells"
     fi
-    
-    # Try to change shell
+
+    # Change default shell to zsh
     if [ "$SHELL" != "$zsh_path" ]; then
-        if chsh -s "$zsh_path" 2>/dev/null; then
-            success "Default shell changed to zsh"
-        else
-            warn "chsh failed, adding bashrc fallback"
-        fi
+        info "Changing default shell to zsh..."
+        chsh -s "$zsh_path"
+        success "Default shell changed to zsh (re-login to take effect)"
     else
         success "zsh is already default shell"
-    fi
-    
-    # Add bashrc fallback so zsh loads even if chsh didn't work
-    # (handles cases where SHELL env doesn't update until re-login)
-    local bashrc="$HOME/.bashrc"
-    local fallback_marker="# dotfiles: auto-switch to zsh"
-    
-    if [ -f "$bashrc" ] && ! grep -q "$fallback_marker" "$bashrc" 2>/dev/null; then
-        info "Adding zsh fallback to .bashrc..."
-        cat >> "$bashrc" << 'EOF'
-
-# dotfiles: auto-switch to zsh
-if [ -x "$(command -v zsh)" ] && [ -z "$ZSH_EXECUTION_SHELL" ]; then
-    export ZSH_EXECUTION_SHELL=1
-    exec zsh -l
-fi
-EOF
-        success "Added zsh fallback to .bashrc"
     fi
 }
 
@@ -197,7 +185,8 @@ main() {
     echo "│         Done! 🌸                │"
     echo "└─────────────────────────────────┘"
     echo ""
-    echo "Restart your terminal or run: exec zsh"
+    echo "Run this to start using zsh now:"
+    echo "  export SHELL=\$(which zsh) && exec zsh"
     echo ""
     echo "Optional: Set font to 'JetBrains Mono Nerd Font'"
     echo "Optional: Import Rosé Pine theme → https://github.com/rose-pine"
