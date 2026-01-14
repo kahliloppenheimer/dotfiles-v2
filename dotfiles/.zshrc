@@ -35,6 +35,9 @@ export VISUAL='vim'
 export PAGER='less'
 export LANG='en_US.UTF-8'
 
+# Source global secrets/API keys if present
+[[ -f ~/.env ]] && source ~/.env
+
 # ── Aliases ──────────────────────────────────────────────────
 alias df='df -h'
 alias du='du -h'
