@@ -1,0 +1,32 @@
+# ── Ripgrep Configuration ──────────────────────────────────
+# Smart case: case-insensitive if pattern is lowercase, case-sensitive otherwise
+--smart-case
+
+# Follow symlinks
+--follow
+
+# Search hidden files/directories
+--hidden
+
+# Exclude common directories
+--glob=!.git/
+--glob=!node_modules/
+--glob=!.venv/
+--glob=!__pycache__/
+--glob=!*.pyc
+--glob=!.DS_Store
+--glob=!.idea/
+--glob=!.vscode/
+--glob=!dist/
+--glob=!build/
+--glob=!target/
+--glob=!coverage/
+
+# ── Colors (Rosé Pine inspired) ─────────────────────────────
+# Using standard colors that complement rose-pine theme
+# path: cyan (foam-like), line: blue, match: yellow (pops against rose-pine)
+--colors=path:fg:red
+--colors=path:style:bold
+--colors=line:fg:blue
+--colors=match:fg:yellow
+--colors=match:style:bold

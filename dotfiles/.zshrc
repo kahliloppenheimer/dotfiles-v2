@@ -34,6 +34,7 @@ export EDITOR='vim'
 export VISUAL='vim'
 export PAGER='less'
 export LANG='en_US.UTF-8'
+export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 
 # Source global secrets/API keys if present
 [[ -f ~/.env ]] && source ~/.env
@@ -52,6 +53,10 @@ fi
 if command -v bat &> /dev/null; then
     alias cat='bat --paging=never --style=plain'
     export BAT_THEME="rose-pine"
+fi
+
+if command -v rg &> /dev/null; then
+    alias cs='rg'
 fi
 
 

@@ -54,12 +54,12 @@ install_packages() {
                 info "Installing Homebrew..."
                 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             fi
-            brew install zsh eza bat git
+            brew install zsh eza bat git ripgrep
             brew install --cask font-jetbrains-mono-nerd-font 2>/dev/null || true
             ;;
         ubuntu|debian)
             sudo apt update
-            sudo apt install -y zsh git curl
+            sudo apt install -y zsh git curl ripgrep
             # eza
             if ! command -v eza &> /dev/null; then
                 sudo mkdir -p /etc/apt/keyrings
@@ -71,13 +71,13 @@ install_packages() {
             [ -f /usr/bin/batcat ] && sudo ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
             ;;
         fedora)
-            sudo dnf install -y zsh git eza bat
+            sudo dnf install -y zsh git eza bat ripgrep
             ;;
         arch)
-            sudo pacman -Sy --noconfirm zsh git eza bat
+            sudo pacman -Sy --noconfirm zsh git eza bat ripgrep
             ;;
         alpine)
-            sudo apk add zsh git bat
+            sudo apk add zsh git bat ripgrep
             ;;
         *)
             warn "Unknown OS, skipping package install"
@@ -140,6 +140,15 @@ link_configs() {
     rm -f "$HOME/.vimrc"
     ln -sf "$DOTFILES_DIR/dotfiles/.vimrc" "$HOME/.vimrc"
     success "Linked ~/.vimrc"
+
+    # ripgreprc
+    if [ -f "$HOME/.ripgreprc" ] && [ ! -L "$HOME/.ripgreprc" ]; then
+        mv "$HOME/.ripgreprc" "$HOME/.ripgreprc.old"
+        success "Backed up ~/.ripgreprc → ~/.ripgreprc.old"
+    fi
+    rm -f "$HOME/.ripgreprc"
+    ln -sf "$DOTFILES_DIR/dotfiles/.ripgreprc" "$HOME/.ripgreprc"
+    success "Linked ~/.ripgreprc"
 
     # Create local override files
     [ -f "$HOME/.zshrc.local" ] || touch "$HOME/.zshrc.local"
