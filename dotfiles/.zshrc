@@ -133,10 +133,11 @@ $output"
 # Attach to (or create) session "main" when logging in over SSH
 if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$TMUX" ]] && command -v tmux &>/dev/null; then
     tmux new-session -A -s main
+    builtin exit  # SSH connection closes when tmux detaches/exits
 fi
 
-# In an SSH tmux session, 'exit' detaches (closes SSH) instead of killing the session
-# Use 'builtin exit' or 'tmux kill-session' to truly exit
+# In an SSH tmux session, 'exit' detaches instead of killing the session
+# Use 'tmux kill-session' to truly kill the session
 if [[ -n "$SSH_CONNECTION" ]] && [[ -n "$TMUX" ]]; then
     exit() { tmux detach; }
 fi
