@@ -129,5 +129,11 @@ $output"
 # Or set to seconds between checks (default: 3600 = 1 hour)
 [[ -f ~/.dotfiles/dotfiles/auto-update.sh ]] && source ~/.dotfiles/dotfiles/auto-update.sh
 
+# ── Auto-attach tmux on SSH ──────────────────────────────────
+# Attach to (or create) session "main" when logging in over SSH
+if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$TMUX" ]] && command -v tmux &>/dev/null; then
+    tmux new-session -A -s main
+fi
+
 # ── Local Overrides ──────────────────────────────────────────
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
