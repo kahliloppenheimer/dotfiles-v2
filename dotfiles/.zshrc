@@ -135,5 +135,11 @@ if [[ -n "$SSH_CONNECTION" ]] && [[ -z "$TMUX" ]] && command -v tmux &>/dev/null
     tmux new-session -A -s main
 fi
 
+# In an SSH tmux session, 'exit' detaches (closes SSH) instead of killing the session
+# Use 'builtin exit' or 'tmux kill-session' to truly exit
+if [[ -n "$SSH_CONNECTION" ]] && [[ -n "$TMUX" ]]; then
+    exit() { tmux detach; }
+fi
+
 # ── Local Overrides ──────────────────────────────────────────
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
